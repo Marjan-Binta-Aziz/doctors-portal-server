@@ -36,6 +36,7 @@ async function run() {
         const appointmentCollection = client.db("doctor's_portal").collection("appointments");
         const bookingCollection = client.db("doctor's_portal").collection("bookings");
         const userCollection = client.db("doctor's_portal").collection("users");
+        const doctorsCollection = client.db("doctor's_portal").collection("doctors");
 
 
         app.get('/all-user',verifyJWT, async(req, res)=>{
@@ -86,7 +87,7 @@ async function run() {
 
         app.get('/appointment', async(req, res)=> {
             const query = {};
-            const cursor = appointmentCollection.find(query);
+            const cursor = appointmentCollection.find(query).project({name:1});
             const appointment = await cursor.toArray();
             res.send(appointment);
         })
@@ -118,7 +119,6 @@ async function run() {
         })
 
 
-
         app.get('/booking', verifyJWT ,async(req,res)=>{
             const email = req.query.email;
             const decodedEmail = req.decoded.email;
@@ -128,9 +128,7 @@ async function run() {
             const authorization = req.headers.authorization;
             const booking = await bookingCollection.find(query).toArray();
             res.send(booking);
-            }
-            
-
+            }            
         })
 
         app.post('/booking', async(req, res)=>{
@@ -142,6 +140,13 @@ async function run() {
             }
             const result = await bookingCollection.insertOne(booking);
             res.send({success:true , result});
+        });
+
+        // doctors part
+        app.post('/doctor', async(req, res)=>{
+            const doctor = req.body;
+            const result =await doctorsCollection.insertOne(doctor);;
+            res.send(result);
         })
     } 
     
@@ -153,7 +158,7 @@ run().catch(console.dir);
 app.get('/' , (req, res) => {
     res.send("Doctor's Protal is Running")
 })
- 
+
 app.listen(port,()=>{
     console.log('Doctors Portal :', port);
 })
