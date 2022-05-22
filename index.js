@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken')
 const express = require('express');
 const cors = require('cors');
@@ -46,16 +46,16 @@ async function run() {
                 next()
             }
             else{
-                res.status(403).send('Forbidden')
+                res.status(403).send({message:'Forbidden'})
             }
         }
 
-        app.get('/all-user',verifyJWT, async(req, res)=>{
+        app.get('/allUser',verifyJWT, async(req, res)=>{
             const allUser = await userCollection.find().toArray();
             res.send(allUser);
         });
 
-        app.put('/user/admin/:email', verifyAdmin ,verifyJWT, async(req, res)=> {
+        app.put('/user/admin/:email' ,verifyJWT,verifyAdmin, async(req, res)=> {
             const email = req.params.email;            
             const filter = {email: email};
             const updatedDoc = {
@@ -66,6 +66,13 @@ async function run() {
             res.send(result);
             
         });
+
+        app.delete('/user/:email',  async(req, res)=>{
+            const email = req.params.email;
+            const filter = {email: email};
+            const result = await userCollection.deleteOne(filter);
+            res.send(result);
+        })
 
         app.get('/admin/:email', async(req, res)=>{
             const email = req.params.email;
@@ -136,6 +143,13 @@ async function run() {
             }            
         })
 
+        app.get('/booking/:id', verifyJWT, async(req, res) =>{
+            const id = req.params.id;
+            const query = {_id: ObjectId(id)};
+            const booking = await bookingCollection.findOne(query);
+            res.send(booking);
+        })
+
         app.post('/booking', async(req, res)=>{
             const booking = req.body;
             const query = { treatment: booking.treatment, date:booking.date, email: booking.email}
@@ -148,9 +162,21 @@ async function run() {
         });
 
         // doctors part
-        app.post('/doctor', async(req, res)=>{
+        app.get('/doctor', async(req, res)=>{
+            const doctors = await doctorsCollection.find().toArray();
+            res.send(doctors);
+        })
+
+        app.post('/doctor',verifyJWT, async(req, res)=>{
             const doctor = req.body;
-            const result =await doctorsCollection.insertOne(doctor);;
+            const result =await doctorsCollection.insertOne(doctor);
+            res.send(result);
+        });
+
+        app.delete('/doctor/:email',verifyJWT, async(req, res)=>{
+            const email = req.params.email;
+            const filter = {email: email};
+            const result = await doctorsCollection.deleteOne(filter);
             res.send(result);
         })
     } 
