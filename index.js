@@ -38,17 +38,25 @@ async function run() {
         const userCollection = client.db("doctor's_portal").collection("users");
         const doctorsCollection = client.db("doctor's_portal").collection("doctors");
 
+        // middlewire for varify is this user is admin or not 
+        const verifyAdmin = async(req, res, next) => {
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({email: requester});
+            if (requesterAccount.role === 'admin') {
+                next()
+            }
+            else{
+                res.status(403).send('Forbidden')
+            }
+        }
 
         app.get('/all-user',verifyJWT, async(req, res)=>{
             const allUser = await userCollection.find().toArray();
             res.send(allUser);
         });
 
-        app.put('/user/admin/:email',verifyJWT, async(req, res)=> {
-            const email = req.params.email;
-            const requester = req.decoded.email;
-            const requesterAccount = await userCollection.findOne({email: requester});
-            if (requesterAccount.role === 'admin') {
+        app.put('/user/admin/:email', verifyAdmin ,verifyJWT, async(req, res)=> {
+            const email = req.params.email;            
             const filter = {email: email};
             const updatedDoc = {
                 $set: {role: 'admin'},
@@ -56,10 +64,7 @@ async function run() {
             const result = await userCollection.updateOne(filter, updatedDoc);
             console.log(email);
             res.send(result);
-            }else{
-                res.status(403).send('Forbidden')
-            }
-        
+            
         });
 
         app.get('/admin/:email', async(req, res)=>{
