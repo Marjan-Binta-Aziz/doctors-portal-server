@@ -92,7 +92,7 @@ async function run() {
                 $set: user,
             };
             const result = await userCollection.updateOne(filter, updatedDoc, options);
-            const token = jwt.sign({email: email}, process.env.ACCESS_TOKEN , {expiresIn: '1h'});
+            const token = jwt.sign({email: email}, process.env.ACCESS_TOKEN , {expiresIn: '1d'});
             res.send({result, token});
         });
 
@@ -184,8 +184,8 @@ async function run() {
 
         // ==========PAYMENT===============
         app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
-            const appointment = req.body;
-            const price = appointment.price;
+            const myAppointment = req.body;
+            const price = myAppointment.price;
             const amount = price*100;
             const paymentIntent = await stripe.paymentIntents.create({
                 amount : amount,
@@ -194,6 +194,10 @@ async function run() {
             });
             res.send({clientSecret: paymentIntent.client_secret})
             });
+
+
+            // =============BOOKING==========
+            
     } 
     
     finally {    }
