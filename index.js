@@ -4,6 +4,8 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const app = express();
+const stripe = require("stripe")(process.env.STRIPE_SECRETE_KEY);
+
 const port = process.env.PORT || 5000;
 
 //middle wire
@@ -140,7 +142,7 @@ async function run() {
             const authorization = req.headers.authorization;
             const booking = await bookingCollection.find(query).toArray();
             res.send(booking);
-            }            
+            }
         })
 
         app.get('/booking/:id', verifyJWT, async(req, res) =>{
@@ -178,7 +180,20 @@ async function run() {
             const filter = {email: email};
             const result = await doctorsCollection.deleteOne(filter);
             res.send(result);
-        })
+        });
+
+        // ==========PAYMENT===============
+        app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
+            const appointment = req.body;
+            const price = appointment.price;
+            const amount = price*100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount : amount,
+                currency: 'usd',
+                payment_method_types:['card']
+            });
+            res.send({clientSecret: paymentIntent.client_secret})
+            });
     } 
     
     finally {    }
