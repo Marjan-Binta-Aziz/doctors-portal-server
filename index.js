@@ -39,6 +39,7 @@ async function run() {
         const bookingCollection = client.db("doctor's_portal").collection("bookings");
         const userCollection = client.db("doctor's_portal").collection("users");
         const doctorsCollection = client.db("doctor's_portal").collection("doctors");
+        const paymentCollection = client.db("doctor's_portal").collection("payments");
 
         // middlewire for varify is this user is admin or not 
         const verifyAdmin = async(req, res, next) => {
@@ -162,6 +163,22 @@ async function run() {
             const result = await bookingCollection.insertOne(booking);
             res.send({success:true , result});
         });
+        //booking update after pay bill
+        app.patch('/booking/:id', verifyJWT, async(req, res) =>{
+            const id  = req.params.id;
+            const payment = req.body;
+            const filter = {_id: ObjectId(id)};
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                    }
+                            }
+                const result = await paymentCollection.insertOne(payment);
+                const updatedBooking = await bookingCollection.updateOne(filter, updatedDoc);
+                res.send(updatedBooking);
+    });
+
 
         // doctors part
         app.get('/doctor', async(req, res)=>{
@@ -195,9 +212,6 @@ async function run() {
             res.send({clientSecret: paymentIntent.client_secret})
             });
 
-
-            // =============BOOKING==========
-            
     } 
     
     finally {    }
